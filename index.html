@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enquete entre Amigos</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f4f4f9;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+  }
+  .quiz-container {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    max-width: 400px;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+  h2 { font-size: 18px; }
+  .option {
+    margin: 10px 0;
+    display: block;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  .option:hover { background: #f0f0f0; }
+  button {
+    margin-top: 15px;
+    padding: 12px;
+    width: 100%;
+    border: none;
+    background: #007bff;
+    color: white;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  button:disabled { background: #999; cursor: not-allowed; }
+  .results-container {
+    max-width: 600px;
+    width: 100%;
+  }
+  .result {
+    background: #fff;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  .result h3 { margin-top: 0; }
+  .pergunta { font-weight: bold; margin-top: 10px; }
+  .resposta { margin-left: 15px; margin-bottom: 5px; }
+</style>
+</head>
+<body>
+
+
+<div class="quiz-container">
+  <h2 id="question">Quem é você?</h2>
+  <div id="options"></div>
+  <button id="nextBtn" disabled>Próximo</button>
+</div>
+
+<div class="results-container" id="allResults">
+  <h2>Respostas de todos os participantes:</h2>
+</div>
+
+<script>
+const nomes = ["Isac", "Emerson", "Vinicius", "Raiderson", "Pedro"];
+const perguntas = [
+  "Quem exageraria mais nas histórias?",
+  "Quem se apaixona mais fácil?",
+  "Quem mente mais?",
+  "Quem é o mais responsável?",
+  "Quem é mais irresponsável?",
+  "Se você tivesse uma empresa, quem seria o mais útil que você contrataria?",
+  "Quem as mulheres judiaram mais?",
+  "Quem é o mais mole?",
+  "Quem é o mais corajoso?",
+  "Quem é o mais confiante?",
+  "Quem é o mais engraçado?",
+  "Quem é o mais verdadeiro?",
+  "Se você fosse para jogar x2 de qualquer coisa, quem você escolheria?",
+  "Quem se veste melhor?",
+  "Quem é seu cachorro mais fiel?"
+];
+
+let indicePergunta = -1;
+let respostas = [];
+let participante = null;
+const todosParticipantes = [];
+
+const questionEl = document.getElementById("question");
+const optionsEl = document.getElementById("options");
+const nextBtn = document.getElementById("nextBtn");
+const allResultsEl = document.getElementById("allResults");
+
+function carregarOpcoes(lista) {
+  optionsEl.innerHTML = "";
+  lista.forEach(nome => {
+    const label = document.createElement("label");
+    label.classList.add("option");
+
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.name = "resposta";
+    input.value = nome;
+    input.style.display = "none";
+
+    if (indicePergunta === perguntas.indexOf("Quem se veste melhor?") && nome === participante) {
+      input.disabled = true;
+      label.style.opacity = 0.5;
+      label.style.cursor = "not-allowed";
+    }
+
+    label.appendChild(input);
+    label.appendChild(document.createTextNode(nome));
+
+    label.onclick = () => {
+      if (input.disabled) return;
+      document.querySelectorAll(".option").forEach(l => l.style.background = "white");
+      label.style.background = "#d0ebff";
+      nextBtn.disabled = false;
+    };
+
+    optionsEl.appendChild(label);
+  });
+}
+
+function carregarPergunta() {
+  if (indicePergunta === -1) {
+    questionEl.textContent = "Quem é você?";
+    carregarOpcoes(nomes);
+    nextBtn.disabled = true;
+    return;
+  }
+  questionEl.textContent = perguntas[indicePergunta];
+  carregarOpcoes(nomes);
+  nextBtn.disabled = true;
+}
+
+function mostrarTodosResultados() {
+  allResultsEl.innerHTML = "<h2>Respostas de todos os participantes:</h2>";
+  todosParticipantes.forEach(p => {
+    let html = `<div class='result'><h3>${p.participante}</h3>`;
+    perguntas.forEach((pergunta, i) => {
+      html += `<div class='pergunta'>${pergunta}</div>`;
+      html += `<div class='resposta'>→ ${p.respostas[i]}</div>`;
+    });
+    html += `</div>`;
+    allResultsEl.innerHTML += html;
+  });
+}
+
+nextBtn.onclick = () => {
+  const selecionado = document.querySelector("input[name='resposta']:checked");
+  if (!selecionado) return;
+
+  if (indicePergunta === -1) {
+    participante = selecionado.value;
+    indicePergunta++;
+    carregarPergunta();
+    return;
+  }
+
+  respostas.push(selecionado.value);
+  indicePergunta++;
+
+  if (indicePergunta < perguntas.length) {
+    carregarPergunta();
+  } else {
+    todosParticipantes.push({ participante, respostas: [...respostas] });
+    mostrarTodosResultados();
+
+    questionEl.textContent = "Quem é você?";
+    respostas = [];
+    participante = null;
+    indicePergunta = -1;
+    carregarPergunta();
+  }
+};
+
+carregarPergunta();
+</script>
+</body>
+</html>
